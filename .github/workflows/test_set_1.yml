@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2022-2023 Lin Song <linsongui@gmail.com>
+# Copyright (C) 2022-2024 Lin Song <linsongui@gmail.com>
 
 name: test_set_1
 
@@ -7,16 +7,16 @@ on: workflow_call
 
 jobs:
   test_set_1:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.repository_owner == 'hwdsl2'
     strategy:
       matrix:
-        os_version: ["centos:9s", "centos:8s", "centos:7", "rockylinux:8", "almalinux:9", "almalinux:8"]
+        os_version: ["centos:9s", "rockylinux:8", "almalinux:9", "almalinux:8"]
       fail-fast: false
     env:
       OS_VERSION: ${{ matrix.os_version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Build
@@ -83,6 +83,11 @@ jobs:
 
           bash wireguard.sh <<ANSWERS
           4
+          1
+          ANSWERS
+
+          bash wireguard.sh <<ANSWERS
+          5
           y
           ANSWERS
 
@@ -94,6 +99,7 @@ jobs:
 
 
 
+
           ANSWERS
 
           netstat -anpu | grep ':51820'
@@ -101,7 +107,31 @@ jobs:
           ls -ld ~/client.conf
 
           bash wireguard.sh <<ANSWERS
-          4
+          5
+          y
+          ANSWERS
+
+          netstat -anpu | grep ':51820' && exit 1
+          rm -f ~/client*.conf
+
+          bash wireguard.sh <<ANSWERS
+          y
+          invalidfqdn
+          vpn.example.com
+
+
+
+
+          ANSWERS
+
+          netstat -anpu | grep ':51820'
+          systemctl status wg-quick@wg0
+          ls -ld ~/client.conf
+          grep -q 'ENDPOINT vpn.example.com' /etc/wireguard/wg0.conf
+          grep -q 'Endpoint = vpn.example.com:51820' ~/client.conf
+
+          bash wireguard.sh <<ANSWERS
+          5
           y
           ANSWERS
 
